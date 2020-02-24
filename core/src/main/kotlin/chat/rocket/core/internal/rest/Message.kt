@@ -4,12 +4,10 @@ import chat.rocket.common.model.BaseResult
 import chat.rocket.common.model.RoomType
 import chat.rocket.core.RocketChatClient
 import chat.rocket.core.internal.RestResult
-import chat.rocket.core.internal.model.DeletePayload
-import chat.rocket.core.internal.model.MessageReportPayload
-import chat.rocket.core.internal.model.PostMessagePayload
-import chat.rocket.core.internal.model.ReactionPayload
+import chat.rocket.core.internal.model.*
 import chat.rocket.core.internal.model.SendMessageBody
 import chat.rocket.core.internal.model.SendMessagePayload
+import chat.rocket.core.internal.model.SendMessageWithTypeBody
 import chat.rocket.core.model.DeleteResult
 import chat.rocket.core.model.Message
 import chat.rocket.core.model.PagedResult
@@ -60,7 +58,43 @@ suspend fun RocketChatClient.sendMessage(
     val type = Types.newParameterizedType(RestResult::class.java, Message::class.java)
     return@withContext handleRestCall<RestResult<Message>>(request, type).result()
 }
+/**
+ * Sends a new message with the given message id and message type.
+ *
+ * @param messageId The id of message.
+ * @param roomId The room where to send the message (works with all types).
+ * @param message Optional text message to send.
+ * @param alias Optional alias to be used as the sender of the message.
+ * @param emoji Optional emoji to be used as the sender's avatar.
+ * @param avatar Optional avatar url to be used as the sender's avatar.
+ * @param attachments Optional List of [Attachment].
+ * @return The message object.
+ * @param messageType the send message type
+ */
+suspend fun RocketChatClient.sendMessageWithType(
+        messageId: String,
+        roomId: String,
+        message: String? = null,
+        alias: String? = null,
+        emoji: String? = null,
+        avatar: String? = null,
+        attachments: List<Attachment>? = null,
+        messageType:String?=null
+): Message = withContext(Dispatchers.IO) {
+    val payload = SendMessageWithTypePayload(
+            SendMessageWithTypeBody(messageId, roomId,message, alias, emoji, avatar, attachments,t=messageType)
+    )
+    val adapter = moshi.adapter(SendMessageWithTypePayload::class.java)
+    val payloadBody = adapter.toJson(payload)
 
+    val body = RequestBody.create(MEDIA_TYPE_JSON, payloadBody)
+
+    val url = requestUrl(restUrl, "chat.sendMessage").build()
+    val request = requestBuilderForAuthenticatedMethods(url).post(body).build()
+
+    val type = Types.newParameterizedType(RestResult::class.java, Message::class.java)
+    return@withContext handleRestCall<RestResult<Message>>(request, type).result()
+}
 /**
  * Posts a new message.
  *

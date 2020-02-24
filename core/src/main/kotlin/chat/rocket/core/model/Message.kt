@@ -14,29 +14,29 @@ import se.ansman.kotshi.JsonSerializable
 
 @JsonSerializable
 data class Message(
-    @Json(name = "_id") override val id: String,
-    @Json(name = "rid") override val roomId: String,
-    @JsonDefaultValueString("") @Json(name = "msg") override val message: String = "",
-    @Json(name = "ts") @ISO8601Date override val timestamp: Long,
-    @Json(name = "u") override val sender: SimpleUser? = null,
-    @Json(name = "_updatedAt") @ISO8601Date val updatedAt: Long? = null,
-    @ISO8601Date val editedAt: Long? = null,
-    val editedBy: SimpleUser? = null,
-    @Json(name = "alias") val senderAlias: String? = null,
-    val avatar: String? = null,
-    @Json(name = "t") val type: MessageType? = null,
-    @JsonDefaultValueBoolean(false) val groupable: Boolean = false,
-    @JsonDefaultValueBoolean(false) val parseUrls: Boolean = false,
-    val urls: List<Url>? = null,
-    val mentions: List<SimpleUser>? = null,
-    val channels: List<SimpleRoom>? = null,
-    val attachments: List<Attachment>? = null,
-    @JsonDefaultValueBoolean(false) val pinned: Boolean = false,
-    val starred: List<SimpleUser>? = null,
-    val reactions: Reactions? = null,
-    val role: String? = null,
-    @JsonDefaultValueBoolean(true) val synced: Boolean = true, // TODO: Remove after we have a db
-    val unread: Boolean? = null
+        @Json(name = "_id") override val id: String,
+        @Json(name = "rid") override val roomId: String,
+        @JsonDefaultValueString("") @Json(name = "msg") override val message: String = "",
+        @Json(name = "ts") @ISO8601Date override val timestamp: Long,
+        @Json(name = "u") override val sender: SimpleUser? = null,
+        @Json(name = "_updatedAt") @ISO8601Date val updatedAt: Long? = null,
+        @ISO8601Date val editedAt: Long? = null,
+        val editedBy: SimpleUser? = null,
+        @Json(name = "alias") val senderAlias: String? = null,
+        val avatar: String? = null,
+        @Json(name = "t") val type: MessageType? = null,
+        @JsonDefaultValueBoolean(false) val groupable: Boolean = false,
+        @JsonDefaultValueBoolean(false) val parseUrls: Boolean = false,
+        val urls: List<Url>? = null,
+        val mentions: List<SimpleUser>? = null,
+        val channels: List<SimpleRoom>? = null,
+        val attachments: List<Attachment>? = null,
+        @JsonDefaultValueBoolean(false) val pinned: Boolean = false,
+        val starred: List<SimpleUser>? = null,
+        val reactions: Reactions? = null,
+        val role: String? = null,
+        @JsonDefaultValueBoolean(true) val synced: Boolean = true, // TODO: Remove after we have a db
+        val unread: Boolean? = null
 ) : BaseMessage
 
 @FallbackSealedClass(name = "Unspecified", fieldName = "rawType")
@@ -84,6 +84,21 @@ sealed class MessageType {
     @Json(name = "jitsi_call_started")
     class JitsiCallStarted : MessageType()
 
+    @Json(name = "jitsiAudio")
+    class jitsiAudio : MessageType()
+    @Json(name = "jitsiVideo")
+    class jitsiVideo : MessageType()
+    @Json(name = "acceptJistsiAudio")
+    class acceptJistsiAudio : MessageType()
+    @Json(name = "acceptJitsiVideo")
+    class acceptJitsiVideo : MessageType()
+    @Json(name = "rejectCall")
+    class rejectCall : MessageType()
+    @Json(name = "endCall")
+    class endCall : MessageType()
+    @Json(name = "busy")
+    class busy : MessageType()
+
     class Unspecified(val rawType: String) : MessageType()
 }
 
@@ -103,6 +118,13 @@ fun MessageType?.asString(): String? {
         is MessageType.SubscriptionRoleRemoved -> "subscription-role-removed"
         is MessageType.RoomChangedPrivacy -> "room_changed_privacy"
         is MessageType.JitsiCallStarted -> "jitsi_call_started"
+        is MessageType.jitsiAudio->"jitsiAudio"
+        is MessageType.jitsiVideo->"jitsiVideo"
+        is MessageType.acceptJistsiAudio->"acceptJistsiAudio"
+        is MessageType.acceptJitsiVideo->"acceptJitsiVideo"
+        is MessageType.rejectCall->"rejectCall"
+        is MessageType.endCall->"endCall"
+        is MessageType.busy->"busy"
         else -> null
     }
 }
@@ -124,7 +146,7 @@ fun Message.isSystemMessage() = when (type) {
     else -> false
 }
 
-fun messageTypeOf(type: String?): MessageType? {
+private fun messageTypeOf(type: String): MessageType {
     return when (type) {
         "r" -> MessageType.RoomNameChanged()
         "au" -> MessageType.UserAdded()
@@ -140,7 +162,14 @@ fun messageTypeOf(type: String?): MessageType? {
         "subscription-role-removed" -> MessageType.SubscriptionRoleAdded()
         "room_changed_privacy" -> MessageType.RoomChangedPrivacy()
         "jitsi_call_started" -> MessageType.JitsiCallStarted()
-        null -> null
+        "jitsiAudio" -> MessageType.jitsiAudio()
+        "jitsiVideo" -> MessageType.jitsiVideo()
+        "acceptJistsiAudio" -> MessageType.acceptJistsiAudio()
+        "acceptJitsiVideo" -> MessageType.acceptJitsiVideo()
+        "rejectCall" -> MessageType.rejectCall()
+        "endCall" -> MessageType.endCall()
+        "busy" -> MessageType.busy()
         else -> MessageType.Unspecified(type)
     }
+
 }
